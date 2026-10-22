@@ -61,6 +61,7 @@ public class JwtFilter extends OncePerRequestFilter {
             path.equals("/admin/login") ||
             path.startsWith("/public/") ||
             path.startsWith("/invoice/") ||
+            path.startsWith("/admin/invoice/") ||
             path.startsWith("/api/app-config/") ||
             path.equals("/api/payment/config") ||
             path.equals("/privacy-policy.html") ||
