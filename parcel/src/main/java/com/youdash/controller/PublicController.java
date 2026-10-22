@@ -121,59 +121,84 @@ public class PublicController {
         String platformFee = formatInr(o.getPlatformFee());
         String total = formatInr(o.getTotalAmount());
         String weight = o.getWeight() != null ? o.getWeight() + " " + nvl(o.getWeightUnit(), "KG") : "-";
+        String qty = o.getPieceCount() != null ? String.valueOf(o.getPieceCount()) : "1";
 
         return "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'/>" +
                 "<meta name='viewport' content='width=device-width,initial-scale=1'/>" +
-                "<title>Invoice Verification – " + esc(o.getDisplayOrderId()) + "</title>" +
+                "<title>LR Invoice – " + esc(o.getDisplayOrderId()) + "</title>" +
                 "<style>" +
-                "body{font-family:sans-serif;background:#f5f5f5;margin:0;padding:16px;color:#111}" +
-                ".card{background:#fff;border-radius:10px;padding:20px;max-width:480px;margin:0 auto;box-shadow:0 2px 12px rgba(0,0,0,.1)}" +
-                ".badge{display:inline-block;background:#16a34a;color:#fff;font-size:12px;padding:3px 10px;border-radius:20px;margin-bottom:12px}" +
-                "h2{margin:0 0 4px;font-size:18px}" +
-                ".sub{color:#666;font-size:13px;margin-bottom:16px}" +
-                ".section{margin-bottom:14px}" +
-                ".label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px}" +
-                ".value{font-size:14px;font-weight:600;margin-top:2px}" +
-                ".row{display:flex;gap:12px;margin-bottom:10px}" +
-                ".row .col{flex:1}" +
-                ".divider{border:none;border-top:1px solid #eee;margin:14px 0}" +
-                ".amount-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}" +
-                ".amount-row.total{font-weight:700;font-size:15px;border-top:1px solid #eee;padding-top:8px;margin-top:4px}" +
-                ".verified{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;margin-bottom:16px}" +
-                ".verified svg{flex-shrink:0}" +
-                ".co{font-size:11px;color:#aaa;text-align:center;margin-top:16px}" +
+                "*{box-sizing:border-box;margin:0;padding:0}" +
+                "body{font-family:Arial,sans-serif;background:#f0f0f0;padding:16px;color:#111}" +
+                ".no-print{}" +
+                "@media print{.no-print{display:none!important}body{background:#fff;padding:0}.invoice{box-shadow:none;max-width:100%}}" +
+                ".invoice{background:#fff;max-width:620px;margin:0 auto;padding:24px;box-shadow:0 2px 16px rgba(0,0,0,.12)}" +
+                ".verified-bar{background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:8px 14px;display:flex;align-items:center;gap:8px;margin-bottom:18px;font-size:13px;color:#166534;font-weight:600}" +
+                ".header{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:14px}" +
+                ".header h1{font-size:17px;letter-spacing:1px;text-transform:uppercase}" +
+                ".header p{font-size:11px;color:#555;margin-top:3px}" +
+                ".meta{display:flex;justify-content:space-between;margin-bottom:14px;font-size:12px}" +
+                ".meta .block{text-align:center}" +
+                ".meta .block .lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.4px}" +
+                ".meta .block .val{font-weight:700;font-size:14px;margin-top:2px}" +
+                ".meta .block.lr .val{font-size:18px;color:#111}" +
+                ".section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#555;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:8px}" +
+                ".grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}" +
+                ".grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}" +
+                ".field .lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.4px}" +
+                ".field .val{font-size:13px;font-weight:600;margin-top:2px}" +
+                ".field .sub{font-size:11px;color:#666;margin-top:1px}" +
+                "table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px}" +
+                "th{background:#f5f5f5;padding:6px 8px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border:1px solid #ddd}" +
+                "td{padding:7px 8px;border:1px solid #ddd}" +
+                "td.right,th.right{text-align:right}" +
+                ".totals{margin-left:auto;width:260px;font-size:13px}" +
+                ".totals tr td{border:none;padding:3px 6px}" +
+                ".totals tr.grand td{font-weight:700;font-size:14px;border-top:2px solid #111;padding-top:6px}" +
+                ".footer{margin-top:14px;font-size:10px;color:#888;border-top:1px solid #eee;padding-top:10px;text-align:center}" +
+                ".print-btn{display:block;margin:16px auto 0;padding:10px 32px;background:#111;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;letter-spacing:.3px}" +
+                ".print-btn:hover{background:#333}" +
                 "</style></head><body>" +
-                "<div class='card'>" +
-                "<div class='badge'>&#10003; VERIFIED – Original Invoice</div>" +
-                "<h2>YouDash Express</h2>" +
-                "<div class='sub'>LR No: <strong>" + esc(o.getDisplayOrderId()) + "</strong> &nbsp;|&nbsp; " + fmt + " &nbsp;|&nbsp; " + esc(lrType) + "</div>" +
-                "<div class='section'>" +
-                "<div class='row'>" +
-                "<div class='col'><div class='label'>From Hub</div><div class='value'>" + esc(nvl(o.getOriginHubName(), "-")) + "</div><div style='font-size:12px;color:#666'>" + esc(nvl(o.getOriginHubCity(), "")) + "</div></div>" +
-                "<div class='col'><div class='label'>To Hub</div><div class='value'>" + esc(nvl(o.getDestinationHubName(), "-")) + "</div><div style='font-size:12px;color:#666'>" + esc(nvl(o.getDestinationHubCity(), "")) + "</div></div>" +
-                "</div></div>" +
-                "<hr class='divider'/>" +
-                "<div class='section'>" +
-                "<div class='row'>" +
-                "<div class='col'><div class='label'>Sender</div><div class='value'>" + esc(nvl(o.getSenderName(), "-")) + "</div><div style='font-size:12px;color:#666'>" + esc(nvl(o.getSenderPhone(), "")) + "</div></div>" +
-                "<div class='col'><div class='label'>Receiver</div><div class='value'>" + esc(nvl(o.getReceiverName(), "-")) + "</div><div style='font-size:12px;color:#666'>" + esc(nvl(o.getReceiverPhone(), "")) + "</div></div>" +
-                "</div></div>" +
-                "<hr class='divider'/>" +
-                "<div class='section'>" +
-                "<div class='row'>" +
-                "<div class='col'><div class='label'>Category</div><div class='value'>" + esc(nvl(o.getCategoryName(), "-")) + "</div></div>" +
-                "<div class='col'><div class='label'>Weight</div><div class='value'>" + esc(weight) + "</div></div>" +
-                "<div class='col'><div class='label'>Qty</div><div class='value'>" + nvl(o.getPieceCount() != null ? String.valueOf(o.getPieceCount()) : null, "1") + "</div></div>" +
-                "</div></div>" +
-                "<hr class='divider'/>" +
-                "<div class='section'>" +
-                "<div class='amount-row'><span>Freight Charge</span><span>Rs. " + freight + "</span></div>" +
-                "<div class='amount-row'><span>GST</span><span>Rs. " + gst + "</span></div>" +
-                "<div class='amount-row'><span>L Charges</span><span>Rs. " + platformFee + "</span></div>" +
-                "<div class='amount-row total'><span>Net Amount Payable</span><span>Rs. " + total + "</span></div>" +
+                "<div class='invoice'>" +
+                "<div class='verified-bar'>&#10003;&nbsp; Original Invoice – Verified from Server</div>" +
+                "<div class='header'>" +
+                "<h1>YOUDASH EXPRESS DELIVERY</h1>" +
+                "<p>15-7-4, 38 BUS STOP BACK SIDE, OLD GAJUWAKA &nbsp;|&nbsp; GSTIN: 37EJAPM5697C1ZY</p>" +
                 "</div>" +
-                "<div class='co'>YouDash Express &bull; This page confirms the original unmodified invoice.</div>" +
-                "</div></body></html>";
+                "<div class='meta'>" +
+                "<div class='block lr'><div class='lbl'>LR Number</div><div class='val'>" + esc(o.getDisplayOrderId()) + "</div></div>" +
+                "<div class='block'><div class='lbl'>Date</div><div class='val'>" + fmt + "</div></div>" +
+                "<div class='block'><div class='lbl'>LR Type</div><div class='val'>" + esc(lrType) + "</div></div>" +
+                "<div class='block'><div class='lbl'>From</div><div class='val'>" + esc(nvl(o.getOriginHubCity(), "-")) + "</div></div>" +
+                "<div class='block'><div class='lbl'>To</div><div class='val'>" + esc(nvl(o.getDestinationHubCity(), "-")) + "</div></div>" +
+                "</div>" +
+                "<div class='section-title'>Hub Details</div>" +
+                "<div class='grid2' style='margin-bottom:14px'>" +
+                "<div class='field'><div class='lbl'>Origin Hub</div><div class='val'>" + esc(nvl(o.getOriginHubName(), "-")) + "</div><div class='sub'>" + esc(nvl(o.getOriginHubCity(), "")) + "</div></div>" +
+                "<div class='field'><div class='lbl'>Destination Hub</div><div class='val'>" + esc(nvl(o.getDestinationHubName(), "-")) + "</div><div class='sub'>" + esc(nvl(o.getDestinationHubCity(), "")) + "</div></div>" +
+                "</div>" +
+                "<div class='section-title'>Sender &amp; Receiver</div>" +
+                "<div class='grid2' style='margin-bottom:14px'>" +
+                "<div class='field'><div class='lbl'>Sender Name</div><div class='val'>" + esc(nvl(o.getSenderName(), "-")) + "</div><div class='sub'>" + esc(nvl(o.getSenderPhone(), "")) + "</div></div>" +
+                "<div class='field'><div class='lbl'>Receiver Name</div><div class='val'>" + esc(nvl(o.getReceiverName(), "-")) + "</div><div class='sub'>" + esc(nvl(o.getReceiverPhone(), "")) + "</div></div>" +
+                "</div>" +
+                "<div class='section-title'>Item Details</div>" +
+                "<table><thead><tr><th>Item Description</th><th class='right'>Qty</th><th class='right'>Weight</th><th class='right'>Freight (Rs.)</th></tr></thead>" +
+                "<tbody><tr>" +
+                "<td>" + esc(nvl(o.getPackageContents(), nvl(o.getCategoryName(), "Parcel"))) + "</td>" +
+                "<td class='right'>" + qty + "</td>" +
+                "<td class='right'>" + esc(weight) + "</td>" +
+                "<td class='right'>" + freight + "</td>" +
+                "</tr></tbody></table>" +
+                "<table class='totals'><tbody>" +
+                "<tr><td>Freight Charge</td><td class='right'>Rs. " + freight + "</td></tr>" +
+                "<tr><td>GST</td><td class='right'>Rs. " + gst + "</td></tr>" +
+                "<tr><td>L Charges</td><td class='right'>Rs. " + platformFee + "</td></tr>" +
+                "<tr class='grand'><td>Net Amount Payable</td><td class='right'>Rs. " + total + "</td></tr>" +
+                "</tbody></table>" +
+                "<div class='footer'>YouDash Express &bull; This invoice was fetched directly from our server. Any physical copy that does not match this page has been altered.</div>" +
+                "</div>" +
+                "<button class='print-btn no-print' onclick='window.print()'>&#128438;&nbsp; Print / Save as PDF</button>" +
+                "</body></html>";
     }
 
     private String buildNotFoundHtml(String lrNumber) {

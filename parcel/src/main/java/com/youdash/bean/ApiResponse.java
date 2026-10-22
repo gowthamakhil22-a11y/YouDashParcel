@@ -14,6 +14,9 @@ public class ApiResponse<T> {
 
   private Integer status;
   private Integer totalCount;
+  private Integer totalPages;
+  private Long totalElements;
+  private Integer pageNumber;
 
   private Boolean success;
 }

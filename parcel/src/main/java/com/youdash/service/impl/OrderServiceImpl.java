@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -1212,12 +1213,24 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin() {
+    public ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin(String serviceMode, String status, int page, int size) {
         ApiResponse<List<OrderResponseDTO>> response = new ApiResponse<>();
         try {
-            List<OrderEntity> allOrders = orderRepository.findAll(
-                    PageRequest.of(0, 200, Sort.by(Sort.Direction.DESC, "createdAt"))
-            ).getContent();
+            ServiceMode sm = null;
+            if (StringUtils.hasText(serviceMode)) {
+                try { sm = ServiceMode.valueOf(serviceMode.toUpperCase(Locale.ROOT)); } catch (IllegalArgumentException ignored) {}
+            }
+            OrderStatus st = null;
+            if (StringUtils.hasText(status)) {
+                try { st = OrderStatus.valueOf(status.toUpperCase(Locale.ROOT)); } catch (IllegalArgumentException ignored) {}
+            }
+
+            int cappedSize = Math.max(1, Math.min(size, 200));
+            int cappedPage = Math.max(0, page);
+            Page<OrderEntity> pageResult = orderRepository.findAllForAdmin(
+                    sm, st, PageRequest.of(cappedPage, cappedSize, Sort.by(Sort.Direction.DESC, "createdAt")));
+
+            List<OrderEntity> allOrders = pageResult.getContent();
 
             // Batch-load hubs and categories into threadlocal so toOrderDto skips per-row queries
             hubBatchCtx.set(hubRepository.findAll().stream()
@@ -1240,7 +1253,10 @@ public class OrderServiceImpl implements OrderService {
             response.setMessageKey("SUCCESS");
             response.setSuccess(true);
             response.setStatus(200);
-            response.setTotalCount(list.size());
+            response.setTotalCount((int) pageResult.getTotalElements());
+            response.setTotalPages(pageResult.getTotalPages());
+            response.setTotalElements(pageResult.getTotalElements());
+            response.setPageNumber(pageResult.getNumber());
         } catch (Exception e) {
             setError(response, e.getMessage());
         } finally {

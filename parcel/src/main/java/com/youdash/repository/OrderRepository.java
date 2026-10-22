@@ -7,6 +7,7 @@ import com.youdash.model.ServiceMode;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -436,6 +437,22 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     long countActiveOrdersForRider(
             @Param("riderId") Long riderId,
             @Param("activeStatuses") List<OrderStatus> activeStatuses);
+
+    @Query(value = """
+            SELECT o FROM OrderEntity o
+            WHERE (:serviceMode IS NULL OR o.serviceMode = :serviceMode)
+              AND (:status IS NULL OR o.status = :status)
+            ORDER BY o.createdAt DESC
+            """,
+            countQuery = """
+            SELECT COUNT(o) FROM OrderEntity o
+            WHERE (:serviceMode IS NULL OR o.serviceMode = :serviceMode)
+              AND (:status IS NULL OR o.status = :status)
+            """)
+    Page<OrderEntity> findAllForAdmin(
+            @Param("serviceMode") ServiceMode serviceMode,
+            @Param("status") OrderStatus status,
+            Pageable pageable);
 
     @Query("""
             SELECT DISTINCT o.senderName, o.senderPhone FROM OrderEntity o

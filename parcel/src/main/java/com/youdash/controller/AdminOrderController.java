@@ -30,8 +30,12 @@ public class AdminOrderController {
     private OrderRepository orderRepository;
 
     @GetMapping
-    public ApiResponse<List<OrderResponseDTO>> listAll() {
-        return orderService.listAllOrdersAdmin();
+    public ApiResponse<List<OrderResponseDTO>> listAll(
+            @RequestParam(required = false) String service_mode,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return orderService.listAllOrdersAdmin(service_mode, status, page, size);
     }
 
     @GetMapping("/{id}")
