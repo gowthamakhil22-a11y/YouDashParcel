@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class InvoiceTokenUtil {
 
-    @Value("${invoice.hmac.secret}")
+    @Value("${invoice.hmac.secret:Youd@sh#Inv0ice$2024!XkQ9}")
     private String secret;
 
     public String generate(String lrNumber) {
