@@ -26,7 +26,9 @@ import java.time.Instant;
                 @Index(name = "idx_orders_h2h_sender_name", columnList = "service_mode, sender_name"),
                 @Index(name = "idx_orders_h2h_sender_phone", columnList = "service_mode, sender_phone"),
                 @Index(name = "idx_orders_h2h_receiver_name", columnList = "service_mode, receiver_name"),
-                @Index(name = "idx_orders_h2h_receiver_phone", columnList = "service_mode, receiver_phone")
+                @Index(name = "idx_orders_h2h_receiver_phone", columnList = "service_mode, receiver_phone"),
+                @Index(name = "idx_orders_admin_list", columnList = "service_mode, status, created_at DESC"),
+                @Index(name = "idx_orders_admin_payment", columnList = "service_mode, payment_type, created_at DESC")
         })
 @Data
 public class OrderEntity {
