@@ -442,16 +442,37 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             SELECT o FROM OrderEntity o
             WHERE (:serviceMode IS NULL OR o.serviceMode = :serviceMode)
               AND (:status IS NULL OR o.status = :status)
+              AND (:paymentType IS NULL OR o.paymentType = :paymentType)
+              AND (:assigned IS NULL
+                   OR (:assigned = true AND (o.riderId IS NOT NULL OR o.pickupRiderId IS NOT NULL OR o.deliveryRiderId IS NOT NULL))
+                   OR (:assigned = false AND o.riderId IS NULL AND o.pickupRiderId IS NULL AND o.deliveryRiderId IS NULL))
+              AND (:q IS NULL OR LOWER(o.senderName) LIKE LOWER(CONCAT('%', :q, '%'))
+                   OR LOWER(o.receiverName) LIKE LOWER(CONCAT('%', :q, '%'))
+                   OR o.senderPhone LIKE CONCAT('%', :q, '%')
+                   OR o.receiverPhone LIKE CONCAT('%', :q, '%')
+                   OR LOWER(o.displayOrderId) LIKE LOWER(CONCAT('%', :q, '%')))
             ORDER BY o.createdAt DESC
             """,
             countQuery = """
             SELECT COUNT(o) FROM OrderEntity o
             WHERE (:serviceMode IS NULL OR o.serviceMode = :serviceMode)
               AND (:status IS NULL OR o.status = :status)
+              AND (:paymentType IS NULL OR o.paymentType = :paymentType)
+              AND (:assigned IS NULL
+                   OR (:assigned = true AND (o.riderId IS NOT NULL OR o.pickupRiderId IS NOT NULL OR o.deliveryRiderId IS NOT NULL))
+                   OR (:assigned = false AND o.riderId IS NULL AND o.pickupRiderId IS NULL AND o.deliveryRiderId IS NULL))
+              AND (:q IS NULL OR LOWER(o.senderName) LIKE LOWER(CONCAT('%', :q, '%'))
+                   OR LOWER(o.receiverName) LIKE LOWER(CONCAT('%', :q, '%'))
+                   OR o.senderPhone LIKE CONCAT('%', :q, '%')
+                   OR o.receiverPhone LIKE CONCAT('%', :q, '%')
+                   OR LOWER(o.displayOrderId) LIKE LOWER(CONCAT('%', :q, '%')))
             """)
     Page<OrderEntity> findAllForAdmin(
             @Param("serviceMode") ServiceMode serviceMode,
             @Param("status") OrderStatus status,
+            @Param("paymentType") PaymentType paymentType,
+            @Param("assigned") Boolean assigned,
+            @Param("q") String q,
             Pageable pageable);
 
     @Query("""

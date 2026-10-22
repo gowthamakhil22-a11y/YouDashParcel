@@ -1213,7 +1213,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin(String serviceMode, String status, int page, int size) {
+    public ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin(String serviceMode, String status, String payment, String assigned, String q, int page, int size) {
         ApiResponse<List<OrderResponseDTO>> response = new ApiResponse<>();
         try {
             ServiceMode sm = null;
@@ -1224,18 +1224,33 @@ public class OrderServiceImpl implements OrderService {
             if (StringUtils.hasText(status)) {
                 try { st = OrderStatus.valueOf(status.toUpperCase(Locale.ROOT)); } catch (IllegalArgumentException ignored) {}
             }
+            PaymentType pt = null;
+            if (StringUtils.hasText(payment)) {
+                try { pt = PaymentType.valueOf(payment.toUpperCase(Locale.ROOT)); } catch (IllegalArgumentException ignored) {}
+            }
+            Boolean assignedFlag = null;
+            if ("yes".equalsIgnoreCase(assigned)) assignedFlag = Boolean.TRUE;
+            else if ("no".equalsIgnoreCase(assigned)) assignedFlag = Boolean.FALSE;
+            String qParam = StringUtils.hasText(q) ? q.trim() : null;
 
             int cappedSize = Math.max(1, Math.min(size, 200));
             int cappedPage = Math.max(0, page);
             Page<OrderEntity> pageResult = orderRepository.findAllForAdmin(
-                    sm, st, PageRequest.of(cappedPage, cappedSize, Sort.by(Sort.Direction.DESC, "createdAt")));
+                    sm, st, pt, assignedFlag, qParam,
+                    PageRequest.of(cappedPage, cappedSize, Sort.by(Sort.Direction.DESC, "createdAt")));
 
             List<OrderEntity> allOrders = pageResult.getContent();
 
-            // Batch-load hubs and categories into threadlocal so toOrderDto skips per-row queries
-            hubBatchCtx.set(hubRepository.findAll().stream()
+            // Load only hubs and categories referenced by this page's orders
+            Set<Long> hubIds = allOrders.stream()
+                    .flatMap(o -> java.util.stream.Stream.of(o.getOriginHubId(), o.getDestinationHubId()))
+                    .filter(Objects::nonNull).collect(Collectors.toSet());
+            hubBatchCtx.set(hubIds.isEmpty() ? Map.of() : hubRepository.findAllById(hubIds).stream()
                     .collect(Collectors.toMap(HubEntity::getId, h -> h)));
-            catBatchCtx.set(packageCategoryRepository.findAll().stream()
+            Set<Long> catIds = allOrders.stream()
+                    .map(o -> o.getPackageCategoryId())
+                    .filter(Objects::nonNull).collect(Collectors.toSet());
+            catBatchCtx.set(catIds.isEmpty() ? Map.of() : packageCategoryRepository.findAllById(catIds).stream()
                     .collect(Collectors.toMap(PackageCategoryEntity::getId, c -> c)));
             skipTimelineCtx.set(Boolean.TRUE);
 

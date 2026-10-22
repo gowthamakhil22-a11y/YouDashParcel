@@ -37,7 +37,7 @@ public interface OrderService {
 
     ApiResponse<ManualOrderRequestResponseDTO> manualRequest(Long userId, ManualOrderRequestDTO dto);
 
-    ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin(String serviceMode, String status, int page, int size);
+    ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin(String serviceMode, String status, String payment, String assigned, String q, int page, int size);
 
     ApiResponse<OrderResponseDTO> adminAssignRider(Long orderId, Long riderId);
 

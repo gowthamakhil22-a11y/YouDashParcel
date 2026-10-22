@@ -33,9 +33,12 @@ public class AdminOrderController {
     public ApiResponse<List<OrderResponseDTO>> listAll(
             @RequestParam(required = false) String service_mode,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String payment,
+            @RequestParam(required = false) String assigned,
+            @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return orderService.listAllOrdersAdmin(service_mode, status, page, size);
+        return orderService.listAllOrdersAdmin(service_mode, status, payment, assigned, q, page, size);
     }
 
     @GetMapping("/{id}")
