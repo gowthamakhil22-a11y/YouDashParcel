@@ -442,8 +442,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             WHERE o.serviceMode = com.youdash.model.ServiceMode.OUTSTATION
               AND o.senderName IS NOT NULL AND o.senderName != ''
               AND o.senderPhone IS NOT NULL AND o.senderPhone != ''
-              AND (LOWER(o.senderName) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR o.senderPhone LIKE CONCAT('%', :q, '%'))
+              AND (LOWER(o.senderName) LIKE LOWER(CONCAT(:q, '%'))
+                OR o.senderPhone LIKE CONCAT(:q, '%'))
             ORDER BY o.senderName ASC
             """)
     List<Object[]> searchSenderContacts(@Param("q") String q, Pageable pageable);
@@ -453,8 +453,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             WHERE o.serviceMode = com.youdash.model.ServiceMode.OUTSTATION
               AND o.receiverName IS NOT NULL AND o.receiverName != ''
               AND o.receiverPhone IS NOT NULL AND o.receiverPhone != ''
-              AND (LOWER(o.receiverName) LIKE LOWER(CONCAT('%', :q, '%'))
-                OR o.receiverPhone LIKE CONCAT('%', :q, '%'))
+              AND (LOWER(o.receiverName) LIKE LOWER(CONCAT(:q, '%'))
+                OR o.receiverPhone LIKE CONCAT(:q, '%'))
             ORDER BY o.receiverName ASC
             """)
     List<Object[]> searchReceiverContacts(@Param("q") String q, Pageable pageable);

@@ -18,7 +18,15 @@ import java.time.Instant;
                 @Index(name = "idx_orders_search_expires_at", columnList = "search_expires_at"),
                 @Index(name = "idx_orders_payment_due_at", columnList = "payment_due_at"),
                 @Index(name = "idx_orders_pickup_rider_id", columnList = "pickup_rider_id"),
-                @Index(name = "idx_orders_delivery_rider_id", columnList = "delivery_rider_id")
+                @Index(name = "idx_orders_delivery_rider_id", columnList = "delivery_rider_id"),
+                @Index(name = "idx_orders_created_at", columnList = "created_at"),
+                @Index(name = "idx_orders_rider_id", columnList = "rider_id"),
+                @Index(name = "idx_orders_origin_hub_id", columnList = "origin_hub_id"),
+                @Index(name = "idx_orders_destination_hub_id", columnList = "destination_hub_id"),
+                @Index(name = "idx_orders_h2h_sender_name", columnList = "service_mode, sender_name"),
+                @Index(name = "idx_orders_h2h_sender_phone", columnList = "service_mode, sender_phone"),
+                @Index(name = "idx_orders_h2h_receiver_name", columnList = "service_mode, receiver_name"),
+                @Index(name = "idx_orders_h2h_receiver_phone", columnList = "service_mode, receiver_phone")
         })
 @Data
 public class OrderEntity {

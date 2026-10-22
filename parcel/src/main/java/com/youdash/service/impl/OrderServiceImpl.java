@@ -130,6 +130,10 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private PackageCategoryRepository packageCategoryRepository;
 
+    private final ThreadLocal<Map<Long, HubEntity>> hubBatchCtx = new ThreadLocal<>();
+    private final ThreadLocal<Map<Long, PackageCategoryEntity>> catBatchCtx = new ThreadLocal<>();
+    private final ThreadLocal<Boolean> skipTimelineCtx = new ThreadLocal<>();
+
     @Autowired
     private ManualOrderRequestRepository manualOrderRequestRepository;
 
@@ -1211,7 +1215,17 @@ public class OrderServiceImpl implements OrderService {
     public ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin() {
         ApiResponse<List<OrderResponseDTO>> response = new ApiResponse<>();
         try {
-            List<OrderEntity> allOrders = orderRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+            List<OrderEntity> allOrders = orderRepository.findAll(
+                    PageRequest.of(0, 200, Sort.by(Sort.Direction.DESC, "createdAt"))
+            ).getContent();
+
+            // Batch-load hubs and categories into threadlocal so toOrderDto skips per-row queries
+            hubBatchCtx.set(hubRepository.findAll().stream()
+                    .collect(Collectors.toMap(HubEntity::getId, h -> h)));
+            catBatchCtx.set(packageCategoryRepository.findAll().stream()
+                    .collect(Collectors.toMap(PackageCategoryEntity::getId, c -> c)));
+            skipTimelineCtx.set(Boolean.TRUE);
+
             Set<Long> allRiderIds = collectOrderRiderIds(allOrders);
             Map<Long, RiderEntity> riderMap = allRiderIds.isEmpty()
                     ? Map.of()
@@ -1229,6 +1243,10 @@ public class OrderServiceImpl implements OrderService {
             response.setTotalCount(list.size());
         } catch (Exception e) {
             setError(response, e.getMessage());
+        } finally {
+            hubBatchCtx.remove();
+            catBatchCtx.remove();
+            skipTimelineCtx.remove();
         }
         return response;
     }
@@ -2352,9 +2370,15 @@ public class OrderServiceImpl implements OrderService {
 
         String categoryName = null;
         if (o.getPackageCategoryId() != null) {
-            categoryName = packageCategoryRepository.findById(o.getPackageCategoryId())
-                    .map(PackageCategoryEntity::getName)
-                    .orElse(null);
+            Map<Long, PackageCategoryEntity> catBatch = catBatchCtx.get();
+            if (catBatch != null) {
+                PackageCategoryEntity cat = catBatch.get(o.getPackageCategoryId());
+                categoryName = cat != null ? cat.getName() : null;
+            } else {
+                categoryName = packageCategoryRepository.findById(o.getPackageCategoryId())
+                        .map(PackageCategoryEntity::getName)
+                        .orElse(null);
+            }
         }
 
         OrderResponseDTO dto = OrderResponseDTO.builder()
@@ -2451,7 +2475,7 @@ public class OrderServiceImpl implements OrderService {
                 .estimatedDeliveryTime(
                         o.getEstimatedDeliveryTime() != null ? o.getEstimatedDeliveryTime().toString() : null)
                 .cutoffApplied(o.getCutoffApplied())
-                .timelineEvents(orderTimelineService.timelineForOrder(o.getId()))
+                .timelineEvents(Boolean.TRUE.equals(skipTimelineCtx.get()) ? null : orderTimelineService.timelineForOrder(o.getId()))
                 .createdAt(o.getCreatedAt() != null ? o.getCreatedAt().toString() : null)
                 .build();
         applyOutstationLegAmounts(dto, o, riderOrderApi, viewerRiderId);
@@ -2635,9 +2659,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private HubEntity resolveHubById(Long hubId) {
-        if (hubId == null) {
-            return null;
-        }
+        if (hubId == null) return null;
+        Map<Long, HubEntity> batch = hubBatchCtx.get();
+        if (batch != null) return batch.get(hubId);
         return hubRepository.findById(hubId).orElse(null);
     }
 
