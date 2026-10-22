@@ -444,6 +444,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             WHERE (:serviceMode IS NULL OR o.serviceMode = :serviceMode)
               AND (:status IS NULL OR o.status = :status)
               AND (:paymentType IS NULL OR o.paymentType = :paymentType)
+              AND (:paymentStatusFilter IS NULL OR UPPER(o.paymentStatus) = UPPER(:paymentStatusFilter))
               AND (:assigned IS NULL
                    OR (:assigned = true AND (o.riderId IS NOT NULL OR o.pickupRiderId IS NOT NULL OR o.deliveryRiderId IS NOT NULL))
                    OR (:assigned = false AND o.riderId IS NULL AND o.pickupRiderId IS NULL AND o.deliveryRiderId IS NULL))
@@ -458,6 +459,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             @Param("serviceMode") ServiceMode serviceMode,
             @Param("status") OrderStatus status,
             @Param("paymentType") PaymentType paymentType,
+            @Param("paymentStatusFilter") String paymentStatusFilter,
             @Param("assigned") Boolean assigned,
             @Param("q") String q,
             Pageable pageable);
@@ -467,6 +469,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             WHERE (:serviceMode IS NULL OR o.serviceMode = :serviceMode)
               AND (:status IS NULL OR o.status = :status)
               AND (:paymentType IS NULL OR o.paymentType = :paymentType)
+              AND (:paymentStatusFilter IS NULL OR UPPER(o.paymentStatus) = UPPER(:paymentStatusFilter))
               AND (:assigned IS NULL
                    OR (:assigned = true AND (o.riderId IS NOT NULL OR o.pickupRiderId IS NOT NULL OR o.deliveryRiderId IS NOT NULL))
                    OR (:assigned = false AND o.riderId IS NULL AND o.pickupRiderId IS NULL AND o.deliveryRiderId IS NULL))
@@ -480,6 +483,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             @Param("serviceMode") ServiceMode serviceMode,
             @Param("status") OrderStatus status,
             @Param("paymentType") PaymentType paymentType,
+            @Param("paymentStatusFilter") String paymentStatusFilter,
             @Param("assigned") Boolean assigned,
             @Param("q") String q);
 
