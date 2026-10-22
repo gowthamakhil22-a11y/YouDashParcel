@@ -135,7 +135,11 @@ public class PublicController {
                 "body{font-family:Arial,sans-serif;background:#f0f0f0;padding:16px;color:#111}" +
                 ".no-print{}" +
                 "@media print{.no-print{display:none!important}body{background:#fff;padding:0}.invoice{box-shadow:none;max-width:100%}}" +
-                ".invoice{background:#fff;max-width:620px;margin:0 auto;padding:24px;box-shadow:0 2px 16px rgba(0,0,0,.12)}" +
+                ".invoice{background:#fff;max-width:620px;margin:0 auto;padding:24px;box-shadow:0 2px 16px rgba(0,0,0,.12);position:relative;overflow:hidden}" +
+                ".wm{position:absolute;inset:0;pointer-events:none;z-index:0;" +
+                "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' width='120' height='120'%3E%3Cg opacity='0.07' fill='%23e53000'%3E%3Cpath d='M72 10 C72 10 80 10 80 20 L80 72 C80 90 65 100 55 100 C40 100 30 90 30 78 C30 70 36 63 44 61 L44 70 C40 71 38 74 38 78 C38 85 46 92 55 92 C64 92 72 85 72 72 L72 10 Z'/%3E%3Crect x='22' y='42' width='32' height='7' rx='3.5'/%3E%3Crect x='18' y='55' width='28' height='7' rx='3.5'/%3E%3Crect x='22' y='68' width='20' height='7' rx='3.5'/%3E%3Ccircle cx='19' cy='71.5' r='4'/%3E%3C/g%3E%3C/svg%3E\");" +
+                "background-repeat:repeat;background-size:120px 120px}" +
+                ".invoice>*:not(.wm){position:relative;z-index:1}" +
                 ".verified-bar{background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:8px 14px;display:flex;align-items:center;gap:8px;margin-bottom:18px;font-size:13px;color:#166534;font-weight:600}" +
                 ".header{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:14px}" +
                 ".header h1{font-size:17px;letter-spacing:1px;text-transform:uppercase}" +
@@ -163,6 +167,7 @@ public class PublicController {
                 ".print-btn:hover{background:#333}" +
                 "</style></head><body>" +
                 "<div class='invoice'>" +
+                "<div class='wm' aria-hidden='true'></div>" +
                 "<div class='verified-bar'>&#10003;&nbsp; Original Invoice – Verified from Server</div>" +
                 "<div class='header'>" +
                 "<h1>YOUDASH EXPRESS DELIVERY</h1>" +
