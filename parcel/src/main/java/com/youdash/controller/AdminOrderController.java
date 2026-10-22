@@ -6,14 +6,18 @@ import com.youdash.dto.AdminH2hPricePreviewRequestDTO;
 import com.youdash.dto.AdminOrderAssignDTO;
 import com.youdash.dto.AdminOrderStatusDTO;
 import com.youdash.dto.FinalPriceResponseDTO;
+import com.youdash.dto.H2hContactDTO;
 import com.youdash.dto.OrderResponseDTO;
 import com.youdash.dto.VerifyHubHandoverRequestDTO;
 import com.youdash.model.OrderStatus;
+import com.youdash.repository.OrderRepository;
 import com.youdash.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/orders")
@@ -21,6 +25,9 @@ public class AdminOrderController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     @GetMapping
     public ApiResponse<List<OrderResponseDTO>> listAll() {
@@ -96,5 +103,23 @@ public class AdminOrderController {
     @PatchMapping("/{id}/collect")
     public ApiResponse<OrderResponseDTO> collectH2hPayment(@PathVariable Long id) {
         return orderService.collectH2hPayment(id);
+    }
+
+    @GetMapping("/hub-to-hub/contacts")
+    public ApiResponse<List<H2hContactDTO>> searchH2hContacts(
+            @RequestParam(defaultValue = "") String q,
+            @RequestParam(defaultValue = "sender") String type) {
+        String query = q.trim();
+        List<Object[]> rows = "receiver".equals(type)
+                ? orderRepository.searchReceiverContacts(query, PageRequest.of(0, 8))
+                : orderRepository.searchSenderContacts(query, PageRequest.of(0, 8));
+        List<H2hContactDTO> contacts = rows.stream()
+                .map(r -> new H2hContactDTO((String) r[0], (String) r[1]))
+                .toList();
+        ApiResponse<List<H2hContactDTO>> res = new ApiResponse<>();
+        res.setData(contacts);
+        res.setSuccess(true);
+        res.setStatus(200);
+        return res;
     }
 }
