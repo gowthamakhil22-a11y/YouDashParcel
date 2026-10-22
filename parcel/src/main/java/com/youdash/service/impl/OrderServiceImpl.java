@@ -195,9 +195,6 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderStatusTransitionGuard orderStatusTransitionGuard;
 
-    @Autowired
-    private com.youdash.util.InvoiceTokenUtil invoiceTokenUtil;
-
     @Override
     public ApiResponse<FinalPriceResponseDTO> calculateFinal(Long userId, FinalPriceRequestDTO dto) {
         ApiResponse<FinalPriceResponseDTO> response = new ApiResponse<>();
@@ -2496,7 +2493,6 @@ public class OrderServiceImpl implements OrderService {
                 .cutoffApplied(o.getCutoffApplied())
                 .timelineEvents(Boolean.TRUE.equals(skipTimelineCtx.get()) ? null : orderTimelineService.timelineForOrder(o.getId()))
                 .createdAt(o.getCreatedAt() != null ? o.getCreatedAt().toString() : null)
-                .invoiceToken(invoiceTokenUtil.generate(o.getDisplayOrderId()))
                 .build();
         applyOutstationLegAmounts(dto, o, riderOrderApi, viewerRiderId);
         applyOutstationFareDetails(dto, o);

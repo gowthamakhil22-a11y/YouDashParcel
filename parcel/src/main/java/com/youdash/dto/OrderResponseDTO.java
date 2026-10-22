@@ -156,6 +156,4 @@ public class OrderResponseDTO {
     private Boolean cutoffApplied;
     private List<OrderTimelineEventDTO> timelineEvents;
     private String createdAt;
-    /** Short HMAC token for the public invoice QR URL — unguessable without the server secret. */
-    private String invoiceToken;
 }
