@@ -456,22 +456,22 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
     @Query("""
             SELECT DISTINCT o.senderName, o.senderPhone FROM OrderEntity o
-            WHERE o.serviceMode = com.youdash.model.ServiceMode.OUTSTATION
+            WHERE o.deliveryType = 'HUB_TO_HUB'
               AND o.senderName IS NOT NULL AND o.senderName != ''
               AND o.senderPhone IS NOT NULL AND o.senderPhone != ''
-              AND (LOWER(o.senderName) LIKE LOWER(CONCAT(:q, '%'))
-                OR o.senderPhone LIKE CONCAT(:q, '%'))
+              AND (LOWER(o.senderName) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR o.senderPhone LIKE CONCAT('%', :q, '%'))
             ORDER BY o.senderName ASC
             """)
     List<Object[]> searchSenderContacts(@Param("q") String q, Pageable pageable);
 
     @Query("""
             SELECT DISTINCT o.receiverName, o.receiverPhone FROM OrderEntity o
-            WHERE o.serviceMode = com.youdash.model.ServiceMode.OUTSTATION
+            WHERE o.deliveryType = 'HUB_TO_HUB'
               AND o.receiverName IS NOT NULL AND o.receiverName != ''
               AND o.receiverPhone IS NOT NULL AND o.receiverPhone != ''
-              AND (LOWER(o.receiverName) LIKE LOWER(CONCAT(:q, '%'))
-                OR o.receiverPhone LIKE CONCAT(:q, '%'))
+              AND (LOWER(o.receiverName) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR o.receiverPhone LIKE CONCAT('%', :q, '%'))
             ORDER BY o.receiverName ASC
             """)
     List<Object[]> searchReceiverContacts(@Param("q") String q, Pageable pageable);
