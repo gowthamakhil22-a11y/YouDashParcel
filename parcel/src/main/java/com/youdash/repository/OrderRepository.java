@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.Instant;
@@ -452,8 +453,16 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
                    OR o.receiverPhone LIKE CONCAT('%', :q, '%')
                    OR LOWER(o.displayOrderId) LIKE LOWER(CONCAT('%', :q, '%')))
             ORDER BY o.createdAt DESC
-            """,
-            countQuery = """
+            """)
+    Slice<OrderEntity> findSliceForAdmin(
+            @Param("serviceMode") ServiceMode serviceMode,
+            @Param("status") OrderStatus status,
+            @Param("paymentType") PaymentType paymentType,
+            @Param("assigned") Boolean assigned,
+            @Param("q") String q,
+            Pageable pageable);
+
+    @Query("""
             SELECT COUNT(o) FROM OrderEntity o
             WHERE (:serviceMode IS NULL OR o.serviceMode = :serviceMode)
               AND (:status IS NULL OR o.status = :status)
@@ -467,13 +476,12 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
                    OR o.receiverPhone LIKE CONCAT('%', :q, '%')
                    OR LOWER(o.displayOrderId) LIKE LOWER(CONCAT('%', :q, '%')))
             """)
-    Page<OrderEntity> findAllForAdmin(
+    long countForAdmin(
             @Param("serviceMode") ServiceMode serviceMode,
             @Param("status") OrderStatus status,
             @Param("paymentType") PaymentType paymentType,
             @Param("assigned") Boolean assigned,
-            @Param("q") String q,
-            Pageable pageable);
+            @Param("q") String q);
 
     @Query("""
             SELECT DISTINCT o.senderName, o.senderPhone FROM OrderEntity o

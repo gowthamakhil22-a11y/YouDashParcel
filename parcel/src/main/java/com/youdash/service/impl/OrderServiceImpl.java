@@ -71,6 +71,20 @@ public class OrderServiceImpl implements OrderService {
     private static final int ADDRESS_SUGGESTION_MAX_LIMIT = 7;
     private static final int ADDRESS_SUGGESTION_MAX_ORDERS_SCAN = 250;
 
+    private final java.util.concurrent.ConcurrentHashMap<String, long[]> adminCountCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long ADMIN_COUNT_CACHE_TTL_MS = 60_000L;
+
+    private long cachedAdminCount(ServiceMode sm, OrderStatus st, PaymentType pt, Boolean assigned, String q) {
+        String key = sm + "|" + st + "|" + pt + "|" + assigned + "|" + q;
+        long[] cached = adminCountCache.get(key);
+        if (cached != null && System.currentTimeMillis() - cached[1] < ADMIN_COUNT_CACHE_TTL_MS) {
+            return cached[0];
+        }
+        long count = orderRepository.countForAdmin(sm, st, pt, assigned, q);
+        adminCountCache.put(key, new long[]{count, System.currentTimeMillis()});
+        return count;
+    }
+
     private static final List<OrderStatus> RIDER_RELEASE_ACTIVE_STATUSES = List.of(
             OrderStatus.RIDER_ACCEPTED,
             OrderStatus.PAYMENT_PENDING,
@@ -1235,11 +1249,11 @@ public class OrderServiceImpl implements OrderService {
 
             int cappedSize = Math.max(1, Math.min(size, 200));
             int cappedPage = Math.max(0, page);
-            Page<OrderEntity> pageResult = orderRepository.findAllForAdmin(
+            org.springframework.data.domain.Slice<OrderEntity> sliceResult = orderRepository.findSliceForAdmin(
                     sm, st, pt, assignedFlag, qParam,
                     PageRequest.of(cappedPage, cappedSize, Sort.by(Sort.Direction.DESC, "createdAt")));
 
-            List<OrderEntity> allOrders = pageResult.getContent();
+            List<OrderEntity> allOrders = sliceResult.getContent();
 
             // Load only hubs and categories referenced by this page's orders
             Set<Long> hubIds = allOrders.stream()
@@ -1263,15 +1277,17 @@ public class OrderServiceImpl implements OrderService {
             List<OrderResponseDTO> list = allOrders.stream()
                     .map(o -> toOrderDto(o, riderMap, vehicleMap, false, null))
                     .collect(Collectors.toList());
+            long totalElements = cachedAdminCount(sm, st, pt, assignedFlag, qParam);
+            int totalPages = cappedSize > 0 ? (int) Math.ceil((double) totalElements / cappedSize) : 1;
             response.setData(list);
             response.setMessage("OK");
             response.setMessageKey("SUCCESS");
             response.setSuccess(true);
             response.setStatus(200);
-            response.setTotalCount((int) pageResult.getTotalElements());
-            response.setTotalPages(pageResult.getTotalPages());
-            response.setTotalElements(pageResult.getTotalElements());
-            response.setPageNumber(pageResult.getNumber());
+            response.setTotalCount((int) totalElements);
+            response.setTotalPages(totalPages);
+            response.setTotalElements(totalElements);
+            response.setPageNumber(sliceResult.getNumber());
         } catch (Exception e) {
             setError(response, e.getMessage());
         } finally {
