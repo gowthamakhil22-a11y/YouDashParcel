@@ -302,10 +302,10 @@ public class PublicController {
         String ps = o.getPaymentStatus() != null ? o.getPaymentStatus().toUpperCase() : "";
         if (ps.equals("TO_PAY") || ps.equals("TOPAY")) return "To Pay";
         if (ps.equals("PAID")) return "Paid";
+        boolean isH2h = "HUB_TO_HUB".equalsIgnoreCase(o.getDeliveryType());
         if (o.getPaymentType() != null) {
             String pt = o.getPaymentType().name().toUpperCase();
-            if (pt.equals("TO_PAY") || pt.equals("TOPAY")) return "To Pay";
-            if (pt.startsWith("COD")) return "COD";
+            if (pt.startsWith("COD")) return isH2h ? "Paid" : "COD";
         }
         return "Paid";
     }
