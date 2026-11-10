@@ -453,6 +453,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
                    OR o.senderPhone LIKE CONCAT('%', :q, '%')
                    OR o.receiverPhone LIKE CONCAT('%', :q, '%')
                    OR LOWER(o.displayOrderId) LIKE LOWER(CONCAT('%', :q, '%')))
+              AND (:fromDate IS NULL OR o.createdAt >= :fromDate)
+              AND (:toDate IS NULL OR o.createdAt < :toDate)
             ORDER BY o.createdAt DESC
             """)
     Slice<OrderEntity> findSliceForAdmin(
@@ -462,6 +464,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             @Param("paymentStatusFilter") String paymentStatusFilter,
             @Param("assigned") Boolean assigned,
             @Param("q") String q,
+            @Param("fromDate") java.time.Instant fromDate,
+            @Param("toDate") java.time.Instant toDate,
             Pageable pageable);
 
     @Query("""
@@ -478,6 +482,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
                    OR o.senderPhone LIKE CONCAT('%', :q, '%')
                    OR o.receiverPhone LIKE CONCAT('%', :q, '%')
                    OR LOWER(o.displayOrderId) LIKE LOWER(CONCAT('%', :q, '%')))
+              AND (:fromDate IS NULL OR o.createdAt >= :fromDate)
+              AND (:toDate IS NULL OR o.createdAt < :toDate)
             """)
     long countForAdmin(
             @Param("serviceMode") ServiceMode serviceMode,
@@ -485,7 +491,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             @Param("paymentType") PaymentType paymentType,
             @Param("paymentStatusFilter") String paymentStatusFilter,
             @Param("assigned") Boolean assigned,
-            @Param("q") String q);
+            @Param("q") String q,
+            @Param("fromDate") java.time.Instant fromDate,
+            @Param("toDate") java.time.Instant toDate);
 
     @Query("""
             SELECT DISTINCT o.senderName, o.senderPhone FROM OrderEntity o

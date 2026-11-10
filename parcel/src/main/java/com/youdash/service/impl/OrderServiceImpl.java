@@ -74,15 +74,57 @@ public class OrderServiceImpl implements OrderService {
     private final java.util.concurrent.ConcurrentHashMap<String, long[]> adminCountCache = new java.util.concurrent.ConcurrentHashMap<>();
     private static final long ADMIN_COUNT_CACHE_TTL_MS = 60_000L;
 
-    private long cachedAdminCount(ServiceMode sm, OrderStatus st, PaymentType pt, String psFilter, Boolean assigned, String q) {
-        String key = sm + "|" + st + "|" + pt + "|" + psFilter + "|" + assigned + "|" + q;
+    private long cachedAdminCount(ServiceMode sm, OrderStatus st, PaymentType pt, String psFilter,
+                                  Boolean assigned, String q, Instant fromDate, Instant toDate) {
+        String key = sm + "|" + st + "|" + pt + "|" + psFilter + "|" + assigned + "|" + q
+                + "|" + fromDate + "|" + toDate;
         long[] cached = adminCountCache.get(key);
         if (cached != null && System.currentTimeMillis() - cached[1] < ADMIN_COUNT_CACHE_TTL_MS) {
             return cached[0];
         }
-        long count = orderRepository.countForAdmin(sm, st, pt, psFilter, assigned, q);
+        long count = orderRepository.countForAdmin(sm, st, pt, psFilter, assigned, q, fromDate, toDate);
         adminCountCache.put(key, new long[]{count, System.currentTimeMillis()});
         return count;
+    }
+
+    /**
+     * Resolve the admin order date window. {@code dateFilter} is TODAY / YESTERDAY / CUSTOM;
+     * CUSTOM (or raw from/to) uses inclusive calendar dates in the server timezone.
+     * Returns {fromInclusive, toExclusive}; either side may be null (open-ended).
+     */
+    private Instant[] resolveAdminDateWindow(String dateFilter, String from, String to) {
+        String mode = dateFilter == null ? "" : dateFilter.trim().toUpperCase(Locale.ROOT);
+        java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+        java.time.LocalDate today = java.time.LocalDate.now(zone);
+        Instant fromInstant = null;
+        Instant toInstant = null;
+
+        if ("TODAY".equals(mode)) {
+            fromInstant = today.atStartOfDay(zone).toInstant();
+            toInstant = today.plusDays(1).atStartOfDay(zone).toInstant();
+        } else if ("YESTERDAY".equals(mode)) {
+            fromInstant = today.minusDays(1).atStartOfDay(zone).toInstant();
+            toInstant = today.atStartOfDay(zone).toInstant();
+        } else if ("CUSTOM".equals(mode) || StringUtils.hasText(from) || StringUtils.hasText(to)) {
+            java.time.LocalDate fromDate = parseAdminDate(from);
+            java.time.LocalDate toDate = parseAdminDate(to);
+            if (fromDate != null) {
+                fromInstant = fromDate.atStartOfDay(zone).toInstant();
+            }
+            if (toDate != null) {
+                toInstant = toDate.plusDays(1).atStartOfDay(zone).toInstant();
+            }
+        }
+        return new Instant[]{fromInstant, toInstant};
+    }
+
+    private java.time.LocalDate parseAdminDate(String value) {
+        if (!StringUtils.hasText(value)) return null;
+        try {
+            return java.time.LocalDate.parse(value.trim());
+        } catch (java.time.format.DateTimeParseException ignored) {
+            return null;
+        }
     }
 
     private static final List<OrderStatus> RIDER_RELEASE_ACTIVE_STATUSES = List.of(
@@ -1227,7 +1269,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin(String serviceMode, String status, String payment, String assigned, String q, int page, int size) {
+    public ApiResponse<List<OrderResponseDTO>> listAllOrdersAdmin(
+            String serviceMode, String status, String payment, String assigned, String q,
+            String dateFilter, String from, String to, int page, int size) {
         ApiResponse<List<OrderResponseDTO>> response = new ApiResponse<>();
         try {
             ServiceMode sm = null;
@@ -1249,11 +1293,14 @@ public class OrderServiceImpl implements OrderService {
             if ("yes".equalsIgnoreCase(assigned)) assignedFlag = Boolean.TRUE;
             else if ("no".equalsIgnoreCase(assigned)) assignedFlag = Boolean.FALSE;
             String qParam = StringUtils.hasText(q) ? q.trim() : null;
+            Instant[] dateWindow = resolveAdminDateWindow(dateFilter, from, to);
+            Instant fromInstant = dateWindow[0];
+            Instant toInstant = dateWindow[1];
 
             int cappedSize = Math.max(1, Math.min(size, 200));
             int cappedPage = Math.max(0, page);
             org.springframework.data.domain.Slice<OrderEntity> sliceResult = orderRepository.findSliceForAdmin(
-                    sm, st, pt, psFilter, assignedFlag, qParam,
+                    sm, st, pt, psFilter, assignedFlag, qParam, fromInstant, toInstant,
                     PageRequest.of(cappedPage, cappedSize, Sort.by(Sort.Direction.DESC, "createdAt")));
 
             List<OrderEntity> allOrders = sliceResult.getContent();
@@ -1280,7 +1327,7 @@ public class OrderServiceImpl implements OrderService {
             List<OrderResponseDTO> list = allOrders.stream()
                     .map(o -> toOrderDto(o, riderMap, vehicleMap, false, null))
                     .collect(Collectors.toList());
-            long totalElements = cachedAdminCount(sm, st, pt, psFilter, assignedFlag, qParam);
+            long totalElements = cachedAdminCount(sm, st, pt, psFilter, assignedFlag, qParam, fromInstant, toInstant);
             int totalPages = cappedSize > 0 ? (int) Math.ceil((double) totalElements / cappedSize) : 1;
             response.setData(list);
             response.setMessage("OK");

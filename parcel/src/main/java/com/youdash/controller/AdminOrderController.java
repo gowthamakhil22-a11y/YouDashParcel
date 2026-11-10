@@ -36,9 +36,13 @@ public class AdminOrderController {
             @RequestParam(required = false) String payment,
             @RequestParam(required = false) String assigned,
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) String date_filter,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
-        return orderService.listAllOrdersAdmin(service_mode, status, payment, assigned, q, page, size);
+        return orderService.listAllOrdersAdmin(
+                service_mode, status, payment, assigned, q, date_filter, from, to, page, size);
     }
 
     @GetMapping("/{id}")
